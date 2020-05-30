@@ -6,6 +6,7 @@ public class reflectionCalculation : MonoBehaviour
 {
 
     public int distanceMax;
+    public Material Target_Material;
 
     Vector3 target;
 
@@ -38,18 +39,32 @@ public class reflectionCalculation : MonoBehaviour
 
     void calculate(Collider Building)
     {
-        if (Physics.Raycast(transform.position, Building.transform.position - transform.position, out hitWall, distanceMax))
+        int layerMask = 1 << 9;
+        //if (Physics.Raycast(transform.position, Building.transform.position - transform.position, out hitWall, distanceMax, layerMask))
+        if (Physics.Raycast(transform.position, Building.bounds.center - transform.position, out hitWall, distanceMax, layerMask))
         {
+            Mesh mesh = hitWall.collider.GetComponent<MeshFilter>().mesh;
+            print(mesh.isReadable);
+            Vector3[] vrtx = mesh.vertices;
+            Vector3[] nrml = mesh.normals;
+            //   Vector3[] vrtx = Building.GetComponent<MeshFilter>().mesh.vertices;
+            //  Vector3[] nrml = Building.GetComponent<MeshFilter>().mesh.normals;
+
             Vector3 perpAngle = hitWall.normal;
             float hitDistance = hitWall.distance;
-            Vector3 hitDirection = Building.transform.position - transform.position;
+            //Vector3 hitDirection = Building.transform.position - transform.position;
+            Vector3 hitDirection = hitWall.point - transform.position;
             float hitAngle = Vector3.Angle((hitWall.normal), -hitDirection.normalized);
 
             perpDistance = hitDistance * Mathf.Cos((hitAngle * Mathf.PI) / 180);
 
             target = transform.position - (hitWall.normal * perpDistance * 2);
 
-
+            GameObject v_sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            v_sphere.transform.position = target;
+            Destroy(v_sphere.GetComponent<SphereCollider>()); // remove collider
+            var sphereRenderer = v_sphere.GetComponent<Renderer>();
+            sphereRenderer.material = Target_Material;
         }
     }
 
@@ -92,7 +107,18 @@ public class reflectionCalculation : MonoBehaviour
 
     private Collider[] wallsNearby()
     {
-        Collider[] walls = Physics.OverlapSphere(transform.position, distanceMax);
+        int layerMask = 1 << 9;
+
+        //List<Vector3> positions = new List<Vector3>();
+
+        Collider[] walls = Physics.OverlapSphere(transform.position, distanceMax, layerMask);
+        /*for (int i = 0; i < walls.Length; i++)
+        {
+            Vector3 temp_position = walls[i].bounds.center;
+            positions.Add(temp_position);
+        }*/
+
+
         return walls;
     }
 }
